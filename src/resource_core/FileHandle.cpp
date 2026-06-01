@@ -1,51 +1,52 @@
 #include "FileHandle.hpp"
 #include "ResourceError.hpp"
-#include <cstdio>
+#include <utility>
 
 namespace lab4::resource
 {
-
-ResourceError::ResourceError(const std::string& message) : std::runtime_error(message) {}
-
-FileHandle::FileHandle(const std::string& filename)
+FileHandle::FileHandle(const std::string& path)
 {
-    file_ = std::fopen(filename.c_str(), "a+");
-    if (!file_)
+    handle_ = std::fopen(path.c_str(), "a+");
+    if (handle_ == nullptr)
     {
-        throw ResourceError("Failed to open file: " + filename);
+        throw ResourceError("Cannot acquire file: " + path);
     }
 }
 
 FileHandle::~FileHandle()
 {
-    if (file_)
+    if (handle_ != nullptr)
     {
-        std::fclose(file_);
+        std::fclose(handle_);
+        handle_ = nullptr;
     }
 }
 
-FileHandle::FileHandle(FileHandle&& other) noexcept : file_(other.file_)
+FileHandle::FileHandle(FileHandle&& donor) noexcept : handle_(donor.handle_)
 {
-    other.file_ = nullptr;
+    donor.handle_ = nullptr;
 }
 
-FileHandle& FileHandle::operator=(FileHandle&& other) noexcept
+FileHandle& FileHandle::operator=(FileHandle&& donor) noexcept
 {
-    if (this != &other)
+    if (this == &donor)
     {
-        if (file_)
-        {
-            std::fclose(file_);
-        }
-        file_ = other.file_;
-        other.file_ = nullptr;
+        return *this;
     }
+
+    if (handle_ != nullptr)
+    {
+        std::fclose(handle_);
+    }
+
+    handle_ = donor.handle_;
+    donor.handle_ = nullptr;
+
     return *this;
 }
 
-bool FileHandle::isOpen() const
+bool FileHandle::isOpen() const noexcept
 {
-    return file_ != nullptr;
+    return handle_ != nullptr;
 }
-
 } // namespace lab4::resource

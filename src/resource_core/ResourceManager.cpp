@@ -1,25 +1,23 @@
 #include "ResourceManager.hpp"
+#include <utility>
 
 namespace lab4::resource
 {
-
-std::shared_ptr<FileHandle> ResourceManager::getFile(const std::string& filename)
+std::shared_ptr<FileHandle> ResourceManager::obtain(const std::string& filename)
 {
-    auto it = cache_.find(filename);
+    auto found = registry_.find(filename);
 
-    if (it != cache_.end())
+    if (found != registry_.end())
     {
-        if (std::shared_ptr<FileHandle> sharedHandle = it->second.lock())
+        auto locked = found->second.lock();
+        if (locked != nullptr)
         {
-            return sharedHandle;
+            return locked;
         }
     }
 
-    std::shared_ptr<FileHandle> newHandle = std::make_shared<FileHandle>(filename);
-
-    cache_[filename] = newHandle;
-
-    return newHandle;
+    auto fresh = std::make_shared<FileHandle>(filename);
+    registry_[filename] = fresh;
+    return fresh;
 }
-
 } // namespace lab4::resource

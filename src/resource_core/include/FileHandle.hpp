@@ -1,24 +1,26 @@
 #pragma once
+#include <cstdio>
 #include <string>
 
-namespace lab4 ::resource
+namespace lab4::resource
 {
 class FileHandle
 {
-  private:
-    std::FILE* file_;
+    std::FILE* handle_;
 
   public:
-    explicit FileHandle(const std::string& filename);
+    FileHandle() = delete;
 
-    ~FileHandle();
+    explicit FileHandle(const std::string& path);
 
     FileHandle(const FileHandle&) = delete;
     FileHandle& operator=(const FileHandle&) = delete;
 
-    FileHandle(FileHandle&& other) noexcept;
-    FileHandle& operator=(FileHandle&& other) noexcept;
+    FileHandle(FileHandle&& donor) noexcept;
+    FileHandle& operator=(FileHandle&& donor) noexcept;
 
-    bool isOpen() const;
+    ~FileHandle();
+
+    [[nodiscard]] bool isOpen() const noexcept;
 };
 } // namespace lab4::resource
