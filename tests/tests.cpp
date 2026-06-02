@@ -1,75 +1,78 @@
-#include <FileHandle.hpp>
-#include <ResourceError.hpp>
-#include <ResourceManager.hpp>
+#include "FileHandle.hpp"
+#include "ResourceError.hpp"
+#include "ResourceManager.hpp"
+
 #include <catch2/catch_all.hpp>
 #include <memory>
+#include <string>
+#include <utility>
 
 using namespace lab4::resource;
 
-TEST_CASE("Тестирование управления ресурсами FileHandle")
+TEST_CASE("Управление временем жизни FileHandle", "[resource]")
 {
-
-    SECTION("Захват и автоматическое освобождение ресурса")
+    SECTION("Захват ресурса при создании и освобождение при разрушении")
     {
-        std::string test_name = "test_raii.txt";
+        const std::string name = "acquire_release.txt";
 
         {
-            FileHandle handle(test_name);
-            REQUIRE(handle.isOpen() == true);
+            const FileHandle fh(name);
+            REQUIRE(fh.isOpen());
         }
+        SUCCEED("Файл закрыт после выхода из области видимости");
     }
 
-    SECTION("Передача владения ресурсом (Move)")
+    SECTION("Корректная передача владения через перемещение")
     {
-        FileHandle handle1("move_test.txt");
-        REQUIRE(handle1.isOpen() == true);
+        FileHandle source("move_src.txt");
+        REQUIRE(source.isOpen());
 
-        FileHandle handle2 = std::move(handle1);
+        FileHandle destination(std::move(source));
 
-        REQUIRE_FALSE(handle1.isOpen());
-        REQUIRE(handle2.isOpen());
+        REQUIRE_FALSE(source.isOpen());
+        REQUIRE(destination.isOpen());
     }
 
-    SECTION("Обработка ошибок при открытии")
+    SECTION("Конструктор с пустым именем файла выбрасывает ResourceError")
     {
         REQUIRE_THROWS_AS(FileHandle(""), ResourceError);
     }
 }
 
-TEST_CASE("Тестирование менеджера ресурсов ResourceManager")
+TEST_CASE("Кеширование в ResourceManager", "[manager]")
 {
     ResourceManager manager;
-    std::string filename = "shared_resource.txt";
+    const std::string shared = "cached_file.txt";
 
-    SECTION("Кеширование: повторный запрос возвращает тот же объект")
+    SECTION("Повторный запрос возвращает тот же самый объект")
     {
-        std::shared_ptr<FileHandle> ptr1 = manager.getFile(filename);
-        std::shared_ptr<FileHandle> ptr2 = manager.getFile(filename);
+        const auto first = manager.obtain(shared);
+        const auto second = manager.obtain(shared);
 
-        REQUIRE(ptr1 == ptr2);
-        REQUIRE(ptr1.use_count() == 2);
+        REQUIRE(first.get() == second.get());
+        REQUIRE(first.use_count() == 2);
     }
 
-    SECTION("Очистка кеша: объект пересоздается, если старый был удален")
+    SECTION("После удаления всех внешних ссылок создаётся новый объект")
     {
-        void* original_address = nullptr;
+        const void* old_addr = nullptr;
 
         {
-            std::shared_ptr<FileHandle> ptr1 = manager.getFile(filename);
-            original_address = ptr1.get();
+            const auto temp = manager.obtain(shared);
+            old_addr = temp.get();
         }
 
-        std::shared_ptr<FileHandle> ptr2 = manager.getFile(filename);
+        const auto renewed = manager.obtain(shared);
 
-        REQUIRE(ptr2.get() != original_address);
-        REQUIRE(ptr2.use_count() == 1);
+        REQUIRE(renewed.get() != old_addr);
+        REQUIRE(renewed.use_count() == 1);
     }
 
-    SECTION("Разные файлы создают разные объекты")
+    SECTION("Разные имена файлов создают независимые объекты")
     {
-        auto fileA = manager.getFile("fileA.txt");
-        auto fileB = manager.getFile("fileB.txt");
+        const auto alpha = manager.obtain("alpha.txt");
+        const auto beta = manager.obtain("beta.txt");
 
-        REQUIRE(fileA != fileB);
+        REQUIRE(alpha.get() != beta.get());
     }
 }

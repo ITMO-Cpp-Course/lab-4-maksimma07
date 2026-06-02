@@ -1,24 +1,26 @@
 #pragma once
+#include <cstdio>
 #include <string>
 
-namespace lab4 ::resource
+namespace lab4::resource
 {
 class FileHandle
 {
-  private:
-    std::FILE* file_;
+    std::FILE* handle_;
 
   public:
-    explicit FileHandle(const std::string& filename);
+    FileHandle() = delete;
 
-    ~FileHandle();
+    explicit FileHandle(const std::string& path); // explicit запрещает неявное копирование std_string в FileHandle
 
     FileHandle(const FileHandle&) = delete;
     FileHandle& operator=(const FileHandle&) = delete;
 
-    FileHandle(FileHandle&& other) noexcept;
-    FileHandle& operator=(FileHandle&& other) noexcept;
+    FileHandle(FileHandle&& donor) noexcept;
+    FileHandle& operator=(FileHandle&& donor) noexcept; // noexcept обещает компилятору, что метод не выбросит исключения
 
-    bool isOpen() const;
+    ~FileHandle();
+
+    [[nodiscard]] bool isOpen() const noexcept; // const не меняет состояние объекта
 };
 } // namespace lab4::resource

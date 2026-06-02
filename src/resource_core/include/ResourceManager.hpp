@@ -4,14 +4,15 @@
 #include <string>
 #include <unordered_map>
 
-namespace lab4 ::resource
+namespace lab4::resource
 {
 class ResourceManager
 {
-  private:
-    std::unordered_map<std::string, std::weak_ptr<FileHandle>> cache_;
+    std::unordered_map<std::string, std::weak_ptr<FileHandle>> registry_;
 
   public:
-    std::shared_ptr<FileHandle> getFile(const std::string& filename);
+    ResourceManager() = default;
+
+    std::shared_ptr<FileHandle> obtain(const std::string& filename);
 };
 } // namespace lab4::resource
