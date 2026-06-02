@@ -6,8 +6,8 @@ namespace lab4::resource
 {
 FileHandle::FileHandle(const std::string& path)
 {
-    handle_ = std::fopen(path.c_str(), "a+");
-    if (handle_ == nullptr)
+    handle_ = std::fopen(path.c_str(), "a+"); // а+ = append/read/create
+    if (handle_ == nullptr) // если нет прав на создание, то будет nullptr
     {
         throw ResourceError("Cannot acquire file: " + path);
     }
@@ -18,7 +18,7 @@ FileHandle::~FileHandle()
     if (handle_ != nullptr)
     {
         std::fclose(handle_);
-        handle_ = nullptr;
+        handle_ = nullptr; // защита от повторного закрытия
     }
 }
 
