@@ -5,11 +5,11 @@ namespace lab4::resource
 {
 std::shared_ptr<FileHandle> ResourceManager::obtain(const std::string& filename)
 {
-    auto found = registry_.find(filename);
+    auto found = registry_.find(filename); // итератор unodered_map
 
     if (found != registry_.end())
     {
-        auto locked = found->second.lock();
+        auto locked = found->second.lock(); // превращаем weak в shared
         if (locked != nullptr)
         {
             return locked;
